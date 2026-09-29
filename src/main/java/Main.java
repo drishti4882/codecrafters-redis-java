@@ -9,17 +9,27 @@ public class Main {
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(6379);
         serverSocket.setReuseAddress(true);
-        Socket client = serverSocket.accept();
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        OutputStream out = client.getOutputStream();
+        while (true) {
+            Socket client = serverSocket.accept();
+            new Thread(() -> handleClient(client)).start();
+        }
+    }
 
-        String line;
-        while ((line = in.readLine()) != null) {
-            if (line.equalsIgnoreCase("PING")) {
-                out.write("+PONG\r\n".getBytes());
-                out.flush();
+    static void handleClient(Socket client) {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            OutputStream out = client.getOutputStream();
+
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.equalsIgnoreCase("PING")) {
+                    out.write("+PONG\r\n".getBytes());
+                    out.flush();
+                }
             }
+        } catch (IOException e) {
+            System.out.println("Client error: " + e.getMessage());
         }
     }
 }
